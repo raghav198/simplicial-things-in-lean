@@ -35,7 +35,30 @@ lemma comm_square (a b c d : X _[0]) (ab bc ad dc ac : X _[1]) (abc adc : X _[2]
 
     homotopic a c ((to_path X εab) ** (to_path X εbc)) ((to_path X εad) ** (to_path X εdc)) :=
 begin
-    apply homotopic.trans, apply homotopic.symm, 
+    apply homotopic.lift,
+    apply homotopic'.trans, apply homotopic.lift, apply homotopic'.symm, 
     refine triangle X a b c ab bc ac abc; assumption,
     refine triangle X a d c ad dc ac adc; assumption,
+end
+
+
+lemma two_triangles (a b c d e : X _[0]) (ab bc ac cd de ce : X _[1]) (abc cde : X _[2])
+    {εab : ends X ab a b} {εbc : ends X bc b c} {εac : ends X ac a c}
+    {εcd : ends X cd c d} {εde : ends X de d e} {εce : ends X ce c e}
+
+    {_ : X.δ 0 abc = bc} {_ : X.δ 1 abc = ac} {_ : X.δ 2 abc = ab}
+    {_ : X.δ 0 cde = de} {_ : X.δ 1 cde = ce} {_ : X.δ 2 cde = cd} :
+
+    homotopic a e ((to_path X εac) ** (to_path X εce)) ((to_path X εab) ** (to_path X εbc) ** (to_path X εcd) ** (to_path X εde)) :=
+begin
+  have H1 : homotopic a e ((to_path X εac) ** (to_path X εce)) ((to_path X εab) ** (to_path X εbc) ** (to_path X εce)),
+  apply homotopic.comp_r,
+  refine triangle X a b c ab bc ac abc; assumption,
+  
+  have H2 : homotopic a e ((to_path X εab) ** (to_path X εbc) ** (to_path X εce)) ((to_path X εab) ** (to_path X εbc) ** (to_path X εcd) ** (to_path X εde)),
+  rw path.comp_assoc (to_path X εab**to_path X εbc),
+  apply homotopic.comp_l,
+  refine triangle X c d e cd de ce cde; assumption,
+  
+  apply homotopic.lift, apply homotopic'.trans, refine H1, refine H2,
 end
