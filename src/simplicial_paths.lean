@@ -11,9 +11,9 @@ open category_theory.functor
 universes u
 variable {X : sSet}
 
-localized "notation (name := simplicial_object.at) X ` _[`:1000 n `]` :=
-  (X : category_theory.simplicial_object hole!).obj (opposite.op (simplex_category.mk n))"
-  in simplicial
+notation (name := simplicial_object.at) X ` _[`:1000 n `]` :=
+  (X : category_theory.simplicial_object hole!).obj (opposite.op (simplex_category.mk n))
+
 
 instance : quiver (X _[0]) := by refine {
   hom := λ A B, { edge : X _[1] // X.δ 1 edge = A ∧ X.δ 0 edge = B}
@@ -60,10 +60,12 @@ inductive homotopic'' (A B : X _[0]) : path A B → path A B → Prop
                     (edge_to_path (X.δ 0 h) C B ((simplicial_10 h).trans ρ) ((simplicial_00 h).trans τ)))
 
 inductive homotopic' (A B : X _[0]) : path A B → path A B → Prop
+| lift (p q : path A B) (h : homotopic'' A B p q) : homotopic' p q
 | comp_l {C : X _[0]} (p : path A C) (q r : path C B) (h : homotopic'' C B q r) : homotopic' (p.comp q) (p.comp r)
 | comp_r {C : X _[0]} (p q : path A C) (r : path C B) (h : homotopic'' A C p q) : homotopic' (p.comp r) (q.comp r)
 
 inductive homotopic (A B : X _[0]) : path A B → path A B → Prop
+| lift (p q : path A B) (h : homotopic' A B p q) : homotopic p q
 | refl (p : path A B) : homotopic p p
 | symm (p q : path A B) (h : homotopic p q) : homotopic q p
 | trans (p q r : path A B) (h1 : homotopic p q) (h2 : homotopic q r) : homotopic p r
