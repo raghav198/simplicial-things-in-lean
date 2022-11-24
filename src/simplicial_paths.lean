@@ -16,7 +16,7 @@ notation (name := simplicial_object.at) X ` _[`:1000 n `]` :=
 
 
 instance : quiver (X _[0]) := by refine {
-  hom := λ A B, { edge : X _[1] // X.δ 1 edge = A ∧ X.δ 0 edge = B}
+  hom := λ A B, {edge : X _[1] // X.δ 1 edge = A ∧ X.δ 0 edge = B}
 }
 
 def edge_to_hom (edge : X _[1]) (A B : X _[0]) (σ : X.δ 1 edge = A) (τ : X.δ 0 edge = B) : 
@@ -59,13 +59,14 @@ inductive homotopic'' (A B : X _[0]) : path A B → path A B → Prop
                     (edge_to_path (X.δ 2 h) A C ((simplicial_11 h).symm.trans σ)  ρ) 
                     (edge_to_path (X.δ 0 h) C B ((simplicial_10 h).trans ρ) ((simplicial_00 h).trans τ)))
 
-inductive homotopic' (A B : X _[0]) : path A B → path A B → Prop
-| lift (p q : path A B) (h : homotopic'' A B p q) : homotopic' p q
-| comp_l {C : X _[0]} (p : path A C) (q r : path C B) (h : homotopic'' C B q r) : homotopic' (p.comp q) (p.comp r)
-| comp_r {C : X _[0]} (p q : path A C) (r : path C B) (h : homotopic'' A C p q) : homotopic' (p.comp r) (q.comp r)
 
-inductive homotopic (A B : X _[0]) : path A B → path A B → Prop
-| lift (p q : path A B) (h : homotopic' A B p q) : homotopic p q
-| refl (p : path A B) : homotopic p p
-| symm (p q : path A B) (h : homotopic p q) : homotopic q p
-| trans (p q r : path A B) (h1 : homotopic p q) (h2 : homotopic q r) : homotopic p r
+mutual inductive homotopic', homotopic
+with homotopic' : Π (A B : X _[0]), path A B → path A B → Prop
+| lift (A B : X _[0]) (p q : path A B) (h : homotopic'' A B p q) : homotopic' A B p q
+| refl (A B : X _[0]) (p : path A B) : homotopic' A B p p
+| symm (A B : X _[0]) (p q : path A B) (h : homotopic A B p q) : homotopic' A B q p
+| trans (A B : X _[0]) (p q r : path A B) (h1 : homotopic A B p q) (h2 : homotopic A B q r) : homotopic' A B p r
+with homotopic : Π (A B : X _[0]), path A B → path A B → Prop
+| lift (A B : X _[0]) (p q : path A B) (h : homotopic' A B p q) : homotopic A B p q
+| comp_l (A B : X _[0]) {C : X _[0]} (p : path A C) (q r : path C B) (h : homotopic C B q r) : homotopic A B (p.comp q) (p.comp r)
+| comp_r (A B : X _[0]) {C : X _[0]} (p q : path A C) (r : path C B) (h : homotopic A C p q) : homotopic A B (p.comp r) (q.comp r)
