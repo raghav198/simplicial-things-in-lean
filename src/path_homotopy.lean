@@ -8,8 +8,9 @@ open sSet quiver category_theory
 open category_theory.simplicial_object
 open category_theory.functor
 
-universes u
-variable {X : sSet}
+universe u
+
+variable {X : sSet.{u}}
 
 notation (name := simplicial_object.at) X ` _[`:1000 n `]` :=
   (X : category_theory.simplicial_object hole!).obj (opposite.op (simplex_category.mk n))
@@ -70,3 +71,17 @@ with homotopic : Π (A B : X _[0]), path A B → path A B → Prop
 | lift (A B : X _[0]) (p q : path A B) (h : homotopic' A B p q) : homotopic A B p q
 | comp_l (A B : X _[0]) {C : X _[0]} (p : path A C) (q r : path C B) (h : homotopic C B q r) : homotopic A B (p.comp q) (p.comp r)
 | comp_r (A B : X _[0]) {C : X _[0]} (p q : path A C) (r : path C B) (h : homotopic A C p q) : homotopic A B (p.comp r) (q.comp r)
+
+@[refl] lemma htpy_refl (A B : X _[0]) (p : path A B) : 
+homotopic A B p p := homotopic.lift A B p p (homotopic'.refl A B p)
+
+@[symm] lemma htpy_symm (A B : X _[0]) (p q : path A B) : 
+homotopic A B p q → homotopic A B q p :=
+λ h, homotopic.lift A B q p (homotopic'.symm A B p q h)
+
+@[trans] lemma htpy_trans (A B : X _[0]) (p q r : path A B) :
+homotopic A B p q → homotopic A B q r → homotopic A B p r :=
+λ h1, λ h2, homotopic.lift A B p r (homotopic'.trans A B p q r h1 h2)
+
+instance (A B : X _[0] ): is_equiv _ (homotopic A B) :=
+{ symm := htpy_symm A B, refl := htpy_refl A B, trans := htpy_trans A B }
