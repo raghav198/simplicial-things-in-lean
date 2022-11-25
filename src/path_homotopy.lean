@@ -8,9 +8,7 @@ open sSet quiver category_theory
 open category_theory.simplicial_object
 open category_theory.functor
 
-universe u
-
-variable {X : sSet.{u}}
+variable {X : sSet}
 
 notation (name := simplicial_object.at) X ` _[`:1000 n `]` :=
   (X : category_theory.simplicial_object hole!).obj (opposite.op (simplex_category.mk n))
@@ -83,5 +81,5 @@ homotopic A B p q → homotopic A B q p :=
 homotopic A B p q → homotopic A B q r → homotopic A B p r :=
 λ h1, λ h2, homotopic.lift A B p r (homotopic'.trans A B p q r h1 h2)
 
-instance (A B : X _[0] ): is_equiv _ (homotopic A B) :=
-{ symm := htpy_symm A B, refl := htpy_refl A B, trans := htpy_trans A B }
+theorem htpy_is_equiv (A B : X _[0]) : equivalence (homotopic A B) := 
+mk_equivalence (homotopic A B) (htpy_refl A B) (htpy_symm A B) (htpy_trans A B)
