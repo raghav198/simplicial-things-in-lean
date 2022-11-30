@@ -92,14 +92,20 @@ def transport_ends {X Y : sSet} {a b : X _[0]} {ab : X _[1]}
 end
 
 def glue_one {X Y : sSet} (f : X ⟶ Y) {a b c : X _[0]} 
-    (p : path a b) (q : path (f ![0] a) (f ![0] b))
+    (q : path (f ![0] a) (f ![0] b))
     (e : X _[1]) (ε : ends e b c) : path (f ![0] a) (f ![0] c) :=
 path.cons q (subtype.mk (f ![1] e) (transport_ends f ε))
 
+def map_edge {X Y : sSet} (f : X ⟶ Y) {a b : X _[0]} (e : a ⟶ b) : (f ![0] a) ⟶ (f ![0] b) :=
+begin
+  have ε : (ends e.val a b), destruct e, intros, subst a_1, simp, assumption,
+  have H := transport_ends f ε,
+  refine subtype.mk (f ![1] e) H,
+end
 
 def path_map {X Y : sSet} (f : X ⟶ Y) {a : X _[0]} : Π {b : X _[0]}, path a b → path (f ![0] a) (f ![0] b)
 | _ path.nil := path.nil
-| b (path.cons p q) := glue_one f p (path_map p) q (begin 
+| b (path.cons p q) := glue_one f (path_map p) q (begin 
   destruct q, intros, rw ← subtype.val_eq_coe, rw a_1, simp,
   dsimp [ends], 
   refine property,
@@ -108,10 +114,13 @@ end)
 @[simp] lemma path_map_nil {X Y : sSet} {a : X _[0]} (f : X ⟶ Y) :
 (@path_map X Y f a a path.nil) = path.nil := rfl
 
-def fmap' {X Y : sSet} (f : X ⟶ Y) {a b : X _[0]} : 
-path a b → ho_hom (f ![0] a) (f ![0] b) := λ p, ⟦path_map f p⟧
+@[simp] lemma path_map_id {X : sSet} {a b} {p : path a b} : path_map (𝟙 X) p = p := begin
+  induction p with b' c' p' e, simp, 
+  unfold path_map, dsimp [glue_one], rw p_ih,
+  destruct e, intros, subst a_1, simp,
+end
 
-@[simp] lemma path_map_comp {X Y : sSet} (f : X ⟶ Y) {a b c : X _[0]} (p : path a b) (q : path b c) :
+@[simp] lemma path_map_app {X Y : sSet} (f : X ⟶ Y) {a b c : X _[0]} (p : path a b) (q : path b c) :
   path_map f (p ** q) = ((path_map f p) ** (path_map f q)) :=
 begin
   induction q, simp, 
@@ -119,17 +128,26 @@ begin
   unfold path_map, unfold glue_one,
 end
 
+@[simp] lemma path_map_cons {X Y : sSet} (f : X ⟶ Y) {a b c : X _[0]} {p : path a b} {e : b ⟶ c} :
+  path_map f (path.cons p e) = (path_map f p).cons (map_edge f e) :=
+begin
+  unfold path_map, dsimp [glue_one], simp, dsimp [map_edge], refl,
+end
+
+@[simp] lemma path_map_comp {X Y Z : sSet} (f : X ⟶ Y) (g : Y ⟶ Z) {a b : X _[0]} {p : path a b} :
+  path_map (f ≫ g) p = (@path_map Y Z g _ _ (@path_map X Y f _ _ p)) := begin
+
+  induction p with b' c' p' e, simp,
+  unfold path_map, dsimp [glue_one], rw p_ih, 
+  simp, dsimp [map_edge], refl,
+end
+
+def fmap' {X Y : sSet} (f : X ⟶ Y) {a b : X _[0]} : 
+path a b → ho_hom (f ![0] a) (f ![0] b) := λ p, ⟦path_map f p⟧
+
 @[simp] lemma fmap'_comp {X Y : sSet} (f : X ⟶ Y) {a b c : X _[0]} (p : path a b) (q : path b c) :
   fmap' f (p ** q) = ho_comp (fmap' f p) (fmap' f q) := begin
   unfold fmap', simp, rw homotopy_compose,
-end
-
-lemma edge_path_map_transport_ends {X Y : sSet} {a b : X _[0]} {ab : X _[1]} 
-    (e : ends ab a b) (f : X ⟶ Y) : 
-  path_map f (to_path e) = to_path (transport_ends f e) :=
-begin
-  unfold to_path, unfold edge_to_path, unfold edge_to_hom, --unfold hom.to_path,
-  unfold path_map, unfold glue_one, simp,
 end
 
 lemma map_homotopy'' {X Y : sSet} {a b : X _[0]} {p q : path a b} (f : X ⟶ Y) :
@@ -156,12 +174,13 @@ lemma map_homotopy'' {X Y : sSet} {a b : X _[0]} {p q : path a b} (f : X ⟶ Y) 
     refine H',
 end
 
-def fmap {X Y : sSet} (f : X ⟶ Y) {a b : X _[0]} := quotient.lift (@fmap' X Y f a b) begin
+def fmap {X Y : sSet} (f : X ⟶ Y) {a b : X _[0]} : ho_hom a b → ho_hom (f ![0] a) (f ![0] b) :=
+quotient.lift (@fmap' X Y f a b) begin
   intros a1 b1 H,
   induction H,
   cases H_h with h C σ τ ρ, focus {
     apply quotient.sound,
-    apply homotopic.lift, --apply homotopic'.lift, 
+    apply homotopic.lift,
     apply map_homotopy'',
     refine H_h,
   },
@@ -171,3 +190,49 @@ def fmap {X Y : sSet} (f : X ⟶ Y) {a b : X _[0]} := quotient.lift (@fmap' X Y 
   simp, rw H_ih, 
   simp, rw H_ih,
 end
+
+@[simp] lemma id_of_fmap_id {X : sSet} {a b : X _[0]} :
+  @fmap X X (𝟙 X) a b = id := begin
+  ext, 
+  have H := pick_rep x, revert H, rintros ⟨x, H⟩, subst H,
+  dsimp [fmap], dsimp [fmap'], simp,
+end
+
+lemma fmap_id' {X Y : sSet} (f : X ⟶ Y) : Π (A : X _[0]), fmap f (𝟙 A) = 𝟙 (f ![0] A) := begin
+  intro A,
+  apply quotient.sound, simp,
+end
+
+lemma fmap_comp' {X Y : sSet} (f : X ⟶ Y) {A B C : X _[0]} {m1 : ho_hom A B} {m2 : ho_hom B C} :
+  fmap f (ho_comp m1 m2) = ho_comp (fmap f m1) (fmap f m2) := begin
+  have Hm1 := pick_rep m1, revert Hm1, rintro ⟨m1', m1'rw⟩, subst m1'rw,
+  have Hm2 := pick_rep m2, revert Hm2, rintro ⟨m2', m2'rw⟩, subst m2'rw,
+  rw homotopy_compose, 
+  unfold fmap, simp,
+end
+
+def fmap_functor {X Y : sSet} (f : X ⟶ Y) : (X _[0]) ⥤ (Y _[0]) := {
+  obj := λ A, f ![0] A,
+  map := λ A B, fmap f,
+  map_id' := fmap_id' f,
+  map_comp' := λ A B C m1 m2, fmap_comp' f,
+}
+
+def HomotopyRealize : sSet ⥤ Cat := {
+  obj := λ X, Cat.of(X _[0]),
+  map := λ X Y, fmap_functor,
+  map_id' := begin
+    intro X, unfold fmap_functor, simp, 
+    dsimp [id], congr,
+  end,
+  map_comp' := begin
+    intros X Y Z f g,
+    dsimp [fmap_functor], congr, simp,
+
+    ext, 
+    have H := pick_rep x_2, revert H, rintro ⟨x2', x2rw⟩, subst x2rw, 
+    dsimp [fmap], dsimp [fmap'], 
+
+    simp,
+  end
+}
