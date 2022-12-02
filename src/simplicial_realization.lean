@@ -4,6 +4,7 @@ import path_homotopy
 import combinatorics.quiver.basic
 import combinatorics.quiver.path
 
+
 open quiver category_theory
 open category_theory.simplicial_object
 
@@ -11,7 +12,7 @@ universe u
 
 variable {X : sSet.{u}}
 
-instance path.is_setoid (A B : X _[0]) : setoid (path A B) := by refine {
+instance path.is_setoid (A B : X _[0]) : setoid (@path (X _[0]) underlying A B) := by refine {
   r := homotopic A B,
   iseqv := htpy_is_equiv A B
 }
@@ -38,7 +39,7 @@ ho_comp ⟦f⟧ ⟦g⟧ = ⟦f.comp g⟧ := begin
   apply quotient.sound, refl,
 end
 
-instance realized : category (X _[0]) := by refine {
+instance realized : category.{u} (X _[0]) := by refine {
   hom := ho_hom,
   id := ho_id,
   comp := λ A B C : X _[0], λ f : ho_hom A B, λ g : ho_hom B C, ho_comp f g,
@@ -111,6 +112,7 @@ def path_map {X Y : sSet} (f : X ⟶ Y) {a : X _[0]} : Π {b : X _[0]}, path a b
   refine property,
 end)
 
+
 @[simp] lemma path_map_nil {X Y : sSet} {a : X _[0]} (f : X ⟶ Y) :
 (@path_map X Y f a a path.nil) = path.nil := rfl
 
@@ -168,7 +170,7 @@ lemma map_homotopy'' {X Y : sSet} {a b : X _[0]} {p q : path a b} (f : X ⟶ Y) 
 
     have H' := homotopic''.homotopy (f ![2] H_h) fσ fτ fρ,
 
-    dsimp [edge_to_path] at *, dsimp [edge_to_hom] at *,
+    dsimp [edge_to_path] at *, dsimp [edge_to_qedge] at *,
     unfold path_map, unfold glue_one, simp,
     simp_rw ← simplicial_map_preserves_faces,
     refine H',
@@ -218,12 +220,13 @@ def fmap_functor {X Y : sSet} (f : X ⟶ Y) : (X _[0]) ⥤ (Y _[0]) := {
   map_comp' := λ A B C m1 m2, fmap_comp' f,
 }
 
-def HomotopyRealize : sSet ⥤ Cat := {
+@[simps]
+def HomotopyRealization : sSet ⥤ Cat := {
   obj := λ X, Cat.of(X _[0]),
   map := λ X Y, fmap_functor,
   map_id' := begin
-    intro X, unfold fmap_functor, simp, 
-    dsimp [id], congr,
+    intro X, unfold fmap_functor, dsimp [id], congr,
+    ext, simp,
   end,
   map_comp' := begin
     intros X Y Z f g,
