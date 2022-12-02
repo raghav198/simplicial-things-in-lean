@@ -18,7 +18,7 @@ instance path.is_setoid (A B : X _[0]) : setoid (@path (X _[0]) underlying A B) 
 }
 
 def ho_hom (A B : X _[0]) := quotient (path.is_setoid A B)
-def ho_id (A : X _[0]) : ho_hom A A := ⟦@path.nil _ _ A⟧
+def ho_id (A : X _[0]) : ho_hom A A := ⟦path.nil.cons (degen_edge A)⟧
 
 def ho_comp' {A B C : X _[0]} (f : path A B) (g : path B C) : ho_hom A C := ⟦f.comp g⟧
 
@@ -50,13 +50,17 @@ instance realized : category.{u} (X _[0]) := by refine {
     unfold ho_id, 
     have H := pick_rep f, revert H, rintro ⟨f', frw⟩, subst frw, 
     rw homotopy_compose, simp,
+    apply homotopic.trans,
+    apply homotopic.comp_r, apply homotopic.degen, simp,
   end,
 
   comp_id' := begin
     intros, dsimp, unfold ho_id, 
     
     have H := pick_rep f, revert H, rintro ⟨f', frw⟩, subst frw, 
-    rw homotopy_compose, simp,
+    rw homotopy_compose, apply quotient.sound,
+    apply homotopic.trans,
+    apply homotopic.comp_l, apply homotopic.degen, simp,
   end,
 
   assoc' := begin
@@ -90,6 +94,15 @@ def transport_ends {X Y : sSet} {a b : X _[0]} {ab : X _[1]}
   (f : X ⟶ Y) (e : ends ab a b) : ends (f ![1] ab) (f ![0] a) (f ![0] b) := begin
     destruct e, intros, subst left, subst right, split, 
     repeat {refine simplicial_map_preserves_faces _},
+end
+
+lemma transport_degenerate_is_degenerate {X Y : sSet} {a : X _[0]} (f :  X ⟶ Y) :
+f ![1] (X.σ 0 a) = Y.σ 0 (f ![0] a) := begin
+  have : X.σ 0 = X.map (@simplex_category.σ 0 0).op, dsimp [σ], refl,
+  rw this, clear this,
+  have : Y.σ 0 = Y.map (@simplex_category.σ 0 0).op, dsimp [σ], refl,
+  rw this, clear this,
+  refine congr_fun (f.naturality (@simplex_category.σ _ 0).op) a,
 end
 
 def glue_one {X Y : sSet} (f : X ⟶ Y) {a b c : X _[0]} 
@@ -186,6 +199,11 @@ quotient.lift (@fmap' X Y f a b) begin
     apply map_homotopy'',
     refine H_h,
   },
+  focus {
+    dsimp [fmap'], dsimp [path_map], dsimp [degen_edge], dsimp [glue_one], 
+    simp_rw transport_degenerate_is_degenerate f,
+    apply quotient.sound, apply homotopic.degen,
+  },
   refl,
   rw H_ih,
   rw H_ih_h1, rw H_ih_h2,
@@ -202,7 +220,8 @@ end
 
 lemma fmap_id' {X Y : sSet} (f : X ⟶ Y) : Π (A : X _[0]), fmap f (𝟙 A) = 𝟙 (f ![0] A) := begin
   intro A,
-  apply quotient.sound, simp,
+  apply quotient.sound, simp, dsimp [map_edge], dsimp [degen_edge],
+  simp_rw transport_degenerate_is_degenerate, refl,
 end
 
 lemma fmap_comp' {X Y : sSet} (f : X ⟶ Y) {A B C : X _[0]} {m1 : ho_hom A B} {m2 : ho_hom B C} :

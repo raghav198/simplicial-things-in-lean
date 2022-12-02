@@ -38,6 +38,14 @@ def ends (ab : X _[1]) (a b : X _[0]) := (X.δ 1 ab = a) ∧ (X.δ 0 ab = b)
 def ends.default (ab : X _[1]) : ends ab (X.δ 1 ab) (X.δ 0 ab) := 
 and.intro (eq.refl _) (eq.refl _)
 
+def ends.degen (A : X _[0]) : ends (X.σ 0 A) A A := begin
+  split, have : X.δ 1 (X.σ 0 A) = (X.σ 0 ≫ X.δ 1) A, refl, rw this,
+  have H := @δ_comp_σ_succ _ _  X 0 0, simp at H,
+  rw H, simp,
+  have : X.δ 0 (X.σ 0 A) = (X.σ 0 ≫ X.δ 0) A, refl, rw this,
+  have H := @δ_comp_σ_self _ _ X 0 0, simp at H, rw H, simp,
+end
+
 -- produces a path a -> b given a proof that a, b are the boundary of a 1-simplex
 def to_path {ab : X _[1]} {a b : X _[0]} (ε : ends ab a b) :=
   edge_to_path ab a b ε.1 ε.2
@@ -75,9 +83,12 @@ inductive homotopic'' (A B : X _[0]) : path A B → path A B → Prop
                     (edge_to_path (X.δ 2 h) A C ((simplicial_11 h).symm.trans σ)  ρ) 
                     (edge_to_path (X.δ 0 h) C B ((simplicial_10 h).trans ρ) ((simplicial_00 h).trans τ)))
 
+def degen_edge (A : X _[0]) : A ⟶ A := subtype.mk (X.σ 0 A) (ends.degen A)
+
 
 inductive homotopic : Π (A B : X _[0]), path A B → path A B → Prop
 | lift (A B : X _[0]) (p q : path A B) (h : homotopic'' A B p q) : homotopic A B p q
+| degen (A : X _[0]) : homotopic A A (path.nil.cons $ degen_edge A) (path.nil)
 | refl (A B : X _[0]) (p : path A B) : homotopic A B p p
 | symm (A B : X _[0]) (p q : path A B) (h : homotopic A B p q) : homotopic A B q p
 | trans (A B : X _[0]) (p q r : path A B) (h1 : homotopic A B p q) (h2 : homotopic A B q r) : homotopic A B p r
