@@ -13,22 +13,23 @@ variable {X : sSet}
 notation (name := simplicial_object.at) X ` _[`:1000 n `]` :=
   (X : category_theory.simplicial_object hole!).obj (opposite.op (simplex_category.mk n))
 
-instance : quiver (X _[0]) := by refine {
+instance underlying : quiver (X _[0]) := by refine {
   hom := λ A B, {edge : X _[1] // X.δ 1 edge = A ∧ X.δ 0 edge = B}
 }
 
-def edge_to_hom (edge : X _[1]) (A B : X _[0]) (σ : X.δ 1 edge = A) (τ : X.δ 0 edge = B) : 
+def edge_to_qedge (edge : X _[1]) (A B : X _[0]) (σ : X.δ 1 edge = A) (τ : X.δ 0 edge = B) : 
 A ⟶ B := subtype.mk edge (by split; assumption)
 
 def edge_to_path (edge : X _[1]) (A B : X _[0]) (σ : X.δ 1 edge = A) (τ : X.δ 0 edge = B) :
-path A B := path.nil.cons (edge_to_hom edge A B σ τ)
+path A B := path.nil.cons (edge_to_qedge edge A B σ τ)
 
 infix `**`:50 := path.comp
 
-@[simp] lemma edge_to_hom_inv_coe 
+
+@[simp] lemma edge_to_qedge_inv_coe 
   {edge : X _[1]} {A B : X _[0]} {σ : X.δ 1 edge = A} {τ : X.δ 0 edge = B} :
-  ↑(edge_to_hom edge A B σ τ) = edge := begin
-  rw ← subtype.val_eq_coe, dsimp [edge_to_hom], refl,
+  ↑(edge_to_qedge edge A B σ τ) = edge := begin
+  rw ← subtype.val_eq_coe, dsimp [edge_to_qedge], refl,
 end 
 
 -- witnesses 0-simplices a, b as the boundary of 1-simplex ab
