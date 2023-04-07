@@ -73,6 +73,22 @@ lemma simplicial_00 (h : X _[2]) : X.δ 0 (X.δ 0 h) = X.δ 0 (X.δ 1 h) := begi
   simp at H, rw H,
 end
 
+-- A -> C -> B
+def triangle_at (A B C : X _[0]) := {tri : X _[2] // 
+  (X.δ 1 (X.δ 1 tri) = A) ∧ 
+  (X.δ 0 (X.δ 1 tri) = B) ∧ 
+  (X.δ 0 (X.δ 2 tri) = C)}
+
+def d1_qedge {A B C : X _[0]} (tri : triangle_at A B C) : A ⟶ B := 
+edge_to_qedge (X.δ 1 tri.1) A B tri.2.1 tri.2.2.1
+
+def d0_qedge {A B C : X _[0]} (tri : triangle_at A B C) : C ⟶ B :=
+edge_to_qedge (X.δ 0 tri.1) C B ((simplicial_10 tri.1).trans tri.2.2.2) ((simplicial_00 tri.1).trans tri.2.2.1)
+
+def d2_qedge {A B C : X _[0]} (tri : triangle_at A B C) : A ⟶ C :=
+edge_to_qedge (X.δ 2 tri.1) A C ((simplicial_11 tri.1).symm.trans tri.2.1) tri.2.2.2
+
+
 inductive homotopic'' (A B : X _[0]) : path A B → path A B → Prop
 | homotopy (h : X _[2]) {C : X _[0]} 
             (σ : X.δ 1 (X.δ 1 h) = A) 
